@@ -129,7 +129,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--encode', '-ed', dest="encode", action="store_true",
-                        help="Encode the private input image into the public input image using stegenography")
+                        help="Encode the private input image into the public input image using steganography")
     parser.add_argument('--decode', '-dd', dest="decode", action="store_true",
                         help="Decode a private input image from a stegenographically encoded image")
 
