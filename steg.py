@@ -214,8 +214,10 @@ def main_decode(input_path='output_encoded.png',
 
 # Use the argparse library to invoke the appropriate functions if somebody is using the command line tool
 def main():
+    # Initialize argparse
     parser = argparse.ArgumentParser()
 
+    # Tell argparse about all of our options
     parser.add_argument('--encode', '-ed', dest="encode", action="store_true",
                         help="Encode the private input image into the public input image using steganography")
     parser.add_argument('--decode', '-dd', dest="decode", action="store_true",
@@ -231,25 +233,31 @@ def main():
     parser.add_argument('--output', '-out', dest='output_path', type=str,
                         help="Output file")
 
+    # Parse the arguments we got
     args = parser.parse_args()
 
+    # Throw errors for invalid cases
     if args.encode and args.decode:
         print "Can't encode and decode in the same run. Pick one."
         return
 
+    # Run encode if the user said to encode
     if args.encode:
         main_encode(input_public_path=args.input_public_path,
                     input_private_path=args.input_private_path,
                     output_path=args.output_path)
         return
 
+    # Run decode if the user said to decode
     if args.decode:
         main_decode(input_path=args.input_path,
                     output_path=args.output_path)
         return
 
+    # If the user didn't ask for either, tell them to.
     print "I'm here, but I need directions. Help me help you help yourself by telling me what you want. " \
-          "(Or run me with -h for help)"
+          "You must pick either --encode or --decode and then pick the appropriate inputs/outputs. " \
+          "(Run me with -h for help)"
 
 
 # Run main if somebody's running this file
