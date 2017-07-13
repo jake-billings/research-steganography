@@ -1,20 +1,30 @@
 #!/usr/bin/env python
 
 from PIL import Image
-import os
-import math
-import argparse
-import sys
 from time import time
+import os, math, sys
+import argparse
 
+
+# Convenience access of write() and flush() so we can print "Loading...Done." and have Loading... and Done on the same
+# line
 write = sys.stdout.write
 flush = sys.stdout.flush
 
+
+# ENCODE_OFFSET_CONSTANT is set to the number of pixels to skip while encoding into pixels
 ENCODE_OFFSET_CONSTANT = 1
+
+# ENCODE_BYTES_PER_PIXEL is used for calculations of file size. If you skip pixels when encoding,
+# you can't fit as much data in an image.
 ENCODE_BYTES_PER_PIXEL = 1 / ENCODE_OFFSET_CONSTANT
-ALPHA = 255
 
 
+# Encode a string of data into a PIL image using steganography
+#
+# input_public_image is the PIL image to encode into
+# input_private_data is the string to encode
+# debug prints additional information throughout the encoding process
 def encode_steg(input_public_image, input_private_data, debug=False):
     width = input_public_image.size[0]
     height = input_public_image.size[1]
@@ -23,7 +33,7 @@ def encode_steg(input_public_image, input_private_data, debug=False):
 
     for x in range(0, width):
         for y in range(0, height):
-            pixel_map[x, y] = (pixel_map[x, y][0], pixel_map[x, y][1], (pixel_map[x, y][2] & 0xFB), ALPHA)
+            pixel_map[x, y] = (pixel_map[x, y][0], pixel_map[x, y][1], (pixel_map[x, y][2] & 0xFB), pixel_map[x, y][3])
 
     for i in range(0, len(input_private_data)):
         x = i * ENCODE_OFFSET_CONSTANT % width
@@ -38,7 +48,7 @@ def encode_steg(input_public_image, input_private_data, debug=False):
         output_pixel = (((val & 0xE0) >> 5) + (pixel[0] & 0xF8),
                         ((val & 0x1C) >> 2) + (pixel[1] & 0xF8),
                         (val & 0x03) + (pixel[2] & 0xF8) + 0x04,
-                        ALPHA)
+                        pixel[3])
 
         pixel_map[x, y] = output_pixel
 
@@ -48,6 +58,10 @@ def encode_steg(input_public_image, input_private_data, debug=False):
     return input_public_image
 
 
+# Decode a string of data from a PIL image using steganography
+#
+# input_image is the PIL image to extract the data from
+# debug prints additional information throughout the decoding process
 def decode_steg(input_image, debug=False):
     width = input_image.size[0]
     height = input_image.size[1]
@@ -76,6 +90,11 @@ def decode_steg(input_image, debug=False):
     return output_data
 
 
+# Runs the encode_steg function with user interface messages; handles loading images from certain input/output paths
+#
+# input_public_path The path to load the input image into which the private data will be encoded into
+# input_private_path The path to load the input data that will be encoded into the private image
+# output_path The path to output to the encoded image to
 def main_encode(input_public_path='input_public.png',
                 input_private_path='input_private.jpg',
                 output_path='output_encoded.png'):
@@ -110,6 +129,10 @@ def main_encode(input_public_path='input_public.png',
         print 'Done in %ss.' % (time() - start)
 
 
+# Runs the decode_steg function with user interface messages; handles loading images from certain input/output paths
+#
+# input_path The path to load the input image from which data will be decoded
+# output_path The path to output to the encoded image to
 def main_decode(input_path='output_encoded.png',
                 output_path='output_private.jpg'):
     write('Decoding...')
@@ -125,6 +148,7 @@ def main_decode(input_path='output_encoded.png',
         print 'Done in %ss.' % (time() - start)
 
 
+# Use the argparse library to invoke the appropriate functions if somebody is using the command line tool
 def main():
     parser = argparse.ArgumentParser()
 
@@ -160,8 +184,10 @@ def main():
                     output_path=args.output_path)
         return
 
-    print "I'm here, but I need directions. Help me help you help yourself by telling me what you want. (Or run me with -h for help)"
+    print "I'm here, but I need directions. Help me help you help yourself by telling me what you want. " \
+          "(Or run me with -h for help)"
 
 
+# Run main if somebody's running this file
 if __name__ == '__main__':
     main()
