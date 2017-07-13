@@ -192,16 +192,23 @@ def main_encode(input_public_path='input_public.png',
 # output_path The path to output to the encoded image to
 def main_decode(input_path='output_encoded.png',
                 output_path='output_private.jpg'):
+    # Announce that decoding has started
     write('Decoding...')
     flush()
     start = time()
 
+    # Load the input image
     input_image = Image.open(input_path)
 
+    # Decode the steg data from the input image
     output_data = decode_steg(input_image)
 
+    # Open the output file and write the output data then announce we did so
     with open(output_path, 'w') as wfile:
+        # Write the output data
         wfile.write(output_data)
+
+        # Print a message to announce we finished decoding
         print 'Done in %ss.' % (time() - start)
 
 
