@@ -142,34 +142,47 @@ def decode_steg(input_image, debug=False):
 def main_encode(input_public_path='input_public.png',
                 input_private_path='input_private.jpg',
                 output_path='output_encoded.png'):
+    # Print a message indicating that we've started loading the public image
     write('Loading...')
     flush()
     start = time()
 
+    # Load the image
     input_public_image = Image.open(input_public_path)
 
+    # Print a message indicating that we've finished
     print 'Done in %ss.' % (time() - start)
 
+    # Check the size of the input data and the available bytes we have to encode it
     required_bytes = os.path.getsize(input_private_path)
     available_bytes = input_public_image.size[0] * input_public_image.size[1] * ENCODE_BYTES_PER_PIXEL
 
+    # Print the size of the input data and the available bytes we have to encode it
     print '%s bytes available for encoding in %s' % (available_bytes, input_public_path)
     print '%s bytes required for encoding of %s' % (required_bytes, input_private_path)
 
+    # Don't try to encode data into an image if the image isn't large enough. Just show an error message.
     if required_bytes > available_bytes:
         print '%s is not large enough to hold %s.' % (input_public_path, input_private_path)
         return
 
+    # Announce the start of encoding
     write('Encoding...')
     flush()
     start = time()
 
+    # Read the input data, encode it, and output it
     with open(input_private_path, 'r') as rfile:
+        # Read the input private data
         input_private_data = rfile.read(required_bytes)
 
+        # Encode the private data into the input image to generate the output image
         output_image = encode_steg(input_public_image, input_private_data)
 
+        # Save the output image
         output_image.save(output_path)
+
+        # Print a message saying that we finished
         print 'Done in %ss.' % (time() - start)
 
 
