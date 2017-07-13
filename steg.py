@@ -91,28 +91,44 @@ def encode_steg(input_public_image, input_private_data, debug=False):
 # input_image is the PIL image to extract the data from
 # debug prints additional information throughout the decoding process
 def decode_steg(input_image, debug=False):
+    # Query PIL for the width and height of the image
     width = input_image.size[0]
     height = input_image.size[1]
 
+    # Load the pixel map from PIL
     pixel_map = input_image.load()
 
+    # Create an array to append our data to
     output_data_arr = []
 
+    # Iterate through the image using a modulus to set x and y. This ensures we do not exceed the bounds of our image
+    # despite the fact that we will probably break out of this loop because the encoded data probably does not exceed
+    # the size of the image
     for i in range(0, width * height / ENCODE_OFFSET_CONSTANT):
+        # Query PIL for the width and height of the image
         x = i * ENCODE_OFFSET_CONSTANT % width
         y = math.floor(i * ENCODE_OFFSET_CONSTANT / width)
+
+        # Query the PIL pixel map for the pixel in question
         pixel = pixel_map[x, y]
 
+        # Check the third bit from the right of the third color channel. If there's no steg data then break. We encode
+        # in order, so once this bit is 0, that's the end of the stream.
         if (pixel[2] & 0x04) >> 2 < 1:
             break
 
+        # Reconstruct the encoded byte by combining the lowest 3 bits of the first two channels and the lowest 2 bits of
+        # the last
         val = ((pixel[0] & 0x07) << 5) + ((pixel[1] & 0x07) << 2) + (pixel[2] & 0x03)
 
+        # Append the data to the output data array
         output_data_arr.append(chr(val))
 
+        # Print some debugging messages
         if (i < 5 or (width * height / ENCODE_OFFSET_CONSTANT) - i <= 5) and debug:
             print i, x, y, chr(val), pixel_map[x, y], val, (pixel[2] & 0x04) >> 2
 
+    # Combine the output data into a string
     output_data = ''.join(output_data_arr)
 
     return output_data
