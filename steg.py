@@ -5,12 +5,10 @@ from time import time
 import os, math, sys
 import argparse
 
-
 # Convenience access of write() and flush() so we can print "Loading...Done." and have Loading... and Done on the same
 # line
 write = sys.stdout.write
 flush = sys.stdout.flush
-
 
 # ENCODE_OFFSET_CONSTANT is set to the number of pixels to skip while encoding into pixels
 ENCODE_OFFSET_CONSTANT = 1
@@ -22,36 +20,59 @@ ENCODE_BYTES_PER_PIXEL = 1 / ENCODE_OFFSET_CONSTANT
 
 # Encode a string of data into a PIL image using steganography
 #
+# When encoding a string or signal into an image, the following rules are used:
+#
+# The left three bits of the signal are encoded into the right three bits of the first color channel.
+# The following three bits of the signal are encoded into the right three bits of the second color channel.
+# The right two bits of the signal are encoded into the right two bits of the third color channel.
+# The third bit from the right of the third color channel is set to 1 to indicate steganographic data is present
+#
 # input_public_image is the PIL image to encode into
 # input_private_data is the string to encode
 # debug prints additional information throughout the encoding process
 def encode_steg(input_public_image, input_private_data, debug=False):
+    # Query PIL for the width and height of the image
     width = input_public_image.size[0]
     height = input_public_image.size[1]
 
+    # Load the pixel map from PIL
     pixel_map = input_public_image.load()
 
+    # Flag the entire image as non-steg. The leftmost bit of the third image channel is used to indicate to the decoder
+    # where image starts and ends.
     for x in range(0, width):
         for y in range(0, height):
+            # The third bit from the right of the third color channel is set to 0 to indicate no steganographic data is
+            # present
             pixel_map[x, y] = (pixel_map[x, y][0], pixel_map[x, y][1], (pixel_map[x, y][2] & 0xFB), pixel_map[x, y][3])
 
+    # Iterate through our entire input signal scanning left to right and top to bottom through the image
     for i in range(0, len(input_private_data)):
+        # Convert our linear signal into a left/right scan through the image
         x = i * ENCODE_OFFSET_CONSTANT % width
         y = math.floor(i * ENCODE_OFFSET_CONSTANT / width)
 
+        # Access the pixel data at our location
         pixel = pixel_map[x, y]
 
+        # Convert the point in the string to its binary value
         val = ord(input_private_data[i])
-        # input_private_data_pixel = (val & 0xE0 >> 5, val & 0x18 >> 3, val & 0x07)
-        # input_public_data_pixel_masked = (pixel[0] & 0xF8, pixel[1] & 0xFC, pixel[2] & 0xF8)
 
+        # Encode the byte from the input signal into the pixel at our position in the output image
+        #
+        # The left three bits of the signal are encoded into the right three bits of the first color channel.
+        # The following three bits of the signal are encoded into the right three bits of the second color channel.
+        # The right two bits of the signal are encoded into the right two bits of the third color channel.
+        # The third bit from the right of the third color channel is set to 1 to indicate steganographic data is present
         output_pixel = (((val & 0xE0) >> 5) + (pixel[0] & 0xF8),
                         ((val & 0x1C) >> 2) + (pixel[1] & 0xF8),
                         (val & 0x03) + (pixel[2] & 0xF8) + 0x04,
                         pixel[3])
 
+        # Update the PIL image in memory
         pixel_map[x, y] = output_pixel
 
+        # Print a debug message if we were told to.
         if i < 10 and debug:
             print i, x, y, input_private_data[i], output_pixel, val, (pixel[2] & 0x04) >> 2
 
@@ -59,6 +80,13 @@ def encode_steg(input_public_image, input_private_data, debug=False):
 
 
 # Decode a string of data from a PIL image using steganography
+#
+# When encoding a string or signal into an image, the following rules are used:
+#
+# The left three bits of the signal are encoded into the right three bits of the first color channel.
+# The following three bits of the signal are encoded into the right three bits of the second color channel.
+# The right two bits of the signal are encoded into the right two bits of the third color channel.
+# The third bit from the right of the third color channel is set to 1 to indicate steganographic data is present
 #
 # input_image is the PIL image to extract the data from
 # debug prints additional information throughout the decoding process
