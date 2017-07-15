@@ -1,4 +1,8 @@
 # research-steganography
+
+[![DOI](https://zenodo.org/badge/97046929.svg)](https://zenodo.org/badge/latestdoi/97046929)
+
+
 Steganography is the process of hiding data in plain sight. For instance, messages can be hidden in the least significant bits of images. That's what this utility does. It allows arbitrary data to be encoded into the least significant bits of images.
  
 ![screenshot.png](imgs/screenshot.png)
